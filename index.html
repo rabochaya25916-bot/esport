@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CyberLeague — матчи, турниры, игроки и конфиги CS2</title>
+  <meta name="description" content="CyberLeague: текущие и предстоящие матчи Counter-Strike 2, турниры, команды, игроки, статистика, конфиги и прицелы про-игроков.">
+  <meta property="og:title" content="CyberLeague — матчи, турниры, игроки и конфиги CS2">
+  <meta property="og:description" content="Матчи и турниры CS2, статистика игроков и команд, конфиги и прицелы про-игроков.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <!--SEO-->
+  <meta name="theme-color" content="#f5f6f8">
+  <!-- Адрес Node.js-сервера CyberLeague (backend). Пусто = сайт открыт с самого Node.js-сервера.
+       Если этот index.html лежит на файловом хостинге, впишите сюда адрес сервера, например https://esports-hub.onrender.com,
+       а на сервере в .env укажите CORS_ORIGINS=https://адрес-этого-сайта -->
+  <meta name="api-base" content="">
+  <!-- static = сайт без сервера (GitHub Pages). Если сайт отдаёт Node.js-сервер, эта строка не мешает. -->
+  <meta name="data-mode" content="static">
+  <meta name="data-url" content="https://rabochaya25916-bot.github.io/esport/data/esports.db">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script type="module" src="assets/js/main.js"></script>
+</head>
+<body>
+  <a class="skip" href="#app">К содержимому</a>
+  <header class="hdr">
+    <div class="wrap hdr-row">
+      <a class="brand" href="/" data-brand-label="главная" aria-label="CyberLeague — главная"><span class="brand-mark" data-brand="mark">CL</span><span class="txt" data-brand="logo">Cyber<b>League</b></span></a>
+      <nav class="nav" id="nav" aria-label="Основная навигация">
+        <a href="/">Главная</a>
+        <a href="/matches">Матчи</a>
+        <a href="/tournaments">Турниры</a>
+        <a href="/players">Игроки</a>
+        <a href="/teams">Команды</a>
+        <a href="/configs">Конфиги</a>
+        <a href="/crosshairs">Прицелы</a>
+        <a class="nav-extra" href="/rankings">Рейтинги</a>
+        <a class="nav-extra" href="/articles">Статьи и гайды</a>
+      </nav>
+      <div class="hdr-tools">
+        <form class="qs" id="qs" role="search" action="/search">
+          <label class="sr-only" for="qsInput">Поиск по командам, игрокам, турнирам, матчам и статьям</label>
+          <input id="qsInput" name="q" type="search" placeholder="Поиск…" autocomplete="off" minlength="2" maxlength="80">
+          <div class="qs-pop" id="qsPop" role="listbox"></div>
+        </form>
+        <a class="icon-btn" href="/settings" title="Настройки" aria-label="Настройки">⚙</a>
+        <button class="icon-btn burger" id="burger" type="button" aria-label="Меню" aria-controls="nav" aria-expanded="false"><span></span></button>
+      </div>
+    </div>
+    <div class="subbar">
+      <div class="wrap">
+        <div class="seg" id="gameTabs" role="tablist" aria-label="Дисциплина">
+          <button type="button" data-g="all"><span class="gdot"></span>Все</button>
+          <button type="button" data-g="cs2"><span class="gdot cs2"></span>CS2</button>
+          <button type="button" data-g="dota2"><span class="gdot dota2"></span>Dota 2</button>
+          <button type="button" data-g="lol"><span class="gdot lol"></span>LoL</button>
+        </div>
+        <div class="fresh" id="fresh" aria-live="polite"></div>
+      </div>
+    </div>
+  </header>
+  <main id="app" class="wrap" tabindex="-1"><!--SSR--><noscript><div class="state"><b>Нужен JavaScript</b>Включите JavaScript, чтобы смотреть матчи и статистику.</div></noscript></main>
+  <footer class="foot">
+    <div class="wrap">
+      <div class="foot-brand"><b data-brand="name">CyberLeague</b><small data-brand="tagline">матчи, турниры, игроки и конфиги CS2</small></div>
+      <nav aria-label="Разделы">
+        <a href="/matches">Матчи</a><a href="/tournaments">Турниры</a><a href="/players">Игроки</a><a href="/teams">Команды</a>
+        <a href="/configs">Конфиги CS2</a><a href="/crosshairs">Прицелы CS2</a><a href="/rankings">Рейтинги</a><a href="/articles">Статьи и гайды</a><a href="/settings">Настройки</a>
+      </nav>
+    </div>
+  </footer>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script>
+  // Автовысота: если сайт открыт внутри другой страницы (например, в WordPress),
+  // сообщаем родительской странице, насколько высоко нужно окно, чтобы не было внутренней прокрутки.
+  (function () {
+    if (window.parent === window) return;
+    var t = null;
+    function send() {
+      if (t) return;
+      t = setTimeout(function () {
+        t = null;
+        parent.postMessage({ source: 'esports-hub', height: document.documentElement.scrollHeight }, '*');
+      }, 150);
+    }
+    addEventListener('load', send);
+    addEventListener('resize', send);
+    if (window.ResizeObserver) { try { new ResizeObserver(send).observe(document.documentElement); } catch (e) {} }
+    if (window.MutationObserver) { try { new MutationObserver(send).observe(document.body, { childList: true, subtree: true, attributes: true }); } catch (e) {} }
+    send();
+  })();
+  </script>
+</body>
+</html>
