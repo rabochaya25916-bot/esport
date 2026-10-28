@@ -1,0 +1,99 @@
+# Сайт без сервера: GitHub сам обновляет данные и публикует сайт на GitHub Pages.
+# Ничего запускать не нужно — достаточно один раз включить Pages (см. README, раздел «Сайт без сервера»).
+name: Обновление сайта
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # каждые ~15 минут (GitHub может задерживать запуск на несколько минут)
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Полная синхронизация прямо сейчас'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update-site
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --omit=dev
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      # Берём базу с уже опубликованного сайта — так сохраняются история матчей и составы
+      - name: Скачать текущую базу
+        run: |
+          mkdir -p data
+          curl -fsSL "${{ steps.pages.outputs.base_url }}/data/esports.db?t=$(date +%s)" -o data/esports.db \
+            && echo "База скачана: $(du -h data/esports.db | cut -f1)" \
+            || { rm -f data/esports.db; echo "Опубликованной базы ещё нет — начинаем с нуля"; }
+
+      - name: Забрать свежие данные с BO3.GG
+        timeout-minutes: 18
+        env:
+          FORCE_FULL: ${{ inputs.full || 'false' }}
+          FULL_EVERY_MIN: '60'
+        run: node scripts/update-data.js
+
+      # Конфиги и прицелы: берём прошлые данные с опубликованного сайта,
+      # затем каждый парсер обновляет их сам, только если они устарели (конфиги — 6 ч, прицелы — 12 ч, полный обход — раз в неделю).
+      - name: Скачать текущие конфиги и прицелы
+        run: |
+          mkdir -p assets/js/data/cs2/configs
+          B="${{ steps.pages.outputs.base_url }}/assets/js/data/cs2"
+          for f in configs.json crosshairs.json status.json; do curl -fsSL "$B/$f?t=$(date +%s)" -o "assets/js/data/cs2/$f.new" && mv "assets/js/data/cs2/$f.new" "assets/js/data/cs2/$f" || rm -f "assets/js/data/cs2/$f.new"; done
+          node -e "const l=require('./assets/js/data/cs2/configs.json').items||[];console.log(l.map(c=>c.id).join('\n'))" 2>/dev/null | while read id; do
+            [ -f "assets/js/data/cs2/configs/$id.json" ] || curl -fsSL "$B/configs/$id.json" -o "assets/js/data/cs2/configs/$id.json" || true; done
+
+      - name: Обновить конфиги и прицелы CS2
+        timeout-minutes: 12
+        continue-on-error: true
+        run: node scripts/update-cs2-content.js
+
+      # Трансляции не требуют ключей: сайт подключает официальный плеер Twitch напрямую по выбору пользователя.
+
+      - name: Собрать файлы сайта
+        run: |
+          mkdir -p _site/data
+          cp index.html favicon.svg _site/
+          cp -r assets _site/
+          cp data/esports.db _site/data/
+          touch _site/.nojekyll
+
+      # Отдельные HTML-страницы с метатегами для поисковиков + sitemap.xml, robots.txt, 404.html и проверка SEO
+      - name: Предгенерация страниц и проверка SEO
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          node scripts/prerender.js _site
+          node scripts/seo-check.js _site/seo-report.json --no-fail
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
