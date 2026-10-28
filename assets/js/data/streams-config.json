@@ -1,0 +1,23 @@
+{
+  "_readme": "Список Twitch-каналов CyberLeague. Редактируется без изменения кода — порядок каналов на сайте меняется только здесь. Поля канала: login (логин Twitch), title (подпись), group ('ru' — приоритетная русскоязычная группа вверху списка, 'other' — остальные), lang (подпись языка на карточке канала), priority (меньше — выше внутри группы), enabled (false — временно убрать), tournaments (id турниров сайта, которые канал официально транслирует — такой канал показывается первым на странице турнира и его матчей). links — явные привязки канала к матчу или турниру: { \"login\": \"pgl\", \"match_id\": 123 } или { \"login\": \"pgl\", \"tournament_id\": 45 }. Сайт не использует Twitch API: онлайн-статус и зрители не запрашиваются; плеер загружается только после выбора канала пользователем.",
+  "games": { "cs2": ["Counter-Strike", "Counter-Strike 2"], "dota2": ["Dota 2"], "lol": ["League of Legends"] },
+  "channels": [
+    { "login": "cs2_paragon_ru", "title": "CS2 Paragon RU", "group": "ru", "lang": "ru", "priority": 1, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "bysl4m", "title": "bysl4m", "group": "ru", "lang": "ru", "priority": 2, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "watchfultv", "title": "WatchfulTV", "group": "ru", "lang": "ru", "priority": 3, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "strogo", "title": "strogo", "group": "ru", "lang": "ru", "priority": 4, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "skywhywalker", "title": "skywhywalker", "group": "ru", "lang": "ru", "priority": 5, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "pgl", "title": "PGL", "group": "other", "lang": null, "priority": 10, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "mauisnake", "title": "mauisnake", "group": "other", "lang": null, "priority": 11, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "cs2_maincast", "title": "CS2 Maincast", "group": "other", "lang": null, "priority": 12, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "pelaajatcom", "title": "pelaajatcom", "group": "other", "lang": null, "priority": 13, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "izakooo", "title": "izakooo", "group": "other", "lang": null, "priority": 14, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "krl_stream", "title": "krl_stream", "group": "other", "lang": null, "priority": 15, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "zonixxcs", "title": "zonixxcs", "group": "other", "lang": null, "priority": 16, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "x9nium", "title": "x9nium", "group": "other", "lang": null, "priority": 17, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "esportstudion", "title": "esportstudion", "group": "other", "lang": null, "priority": 18, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "roman", "title": "roman", "group": "other", "lang": null, "priority": 19, "enabled": true, "tournaments": [], "teams": [] },
+    { "login": "redcs", "title": "redcs", "group": "other", "lang": null, "priority": 20, "enabled": true, "tournaments": [], "teams": [] }
+  ],
+  "links": []
+}
