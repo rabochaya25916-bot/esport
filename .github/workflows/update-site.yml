@@ -1,6 +1,8 @@
 # Сайт без сервера: GitHub сам обновляет данные и публикует сайт на GitHub Pages.
+# Это БЫСТРОЕ обновление: только текущие матчи и результаты, каждые ~15 минут.
+# Полная синхронизация (все турниры, составы, конфиги и прицелы) — в update-site-full.yml раз в час.
 # Ничего запускать не нужно — достаточно один раз включить Pages (см. README, раздел «Сайт без сервера»).
-name: Обновление сайта
+name: Обновление сайта (быстро)
 
 on:
   schedule:
@@ -8,25 +10,22 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      full:
-        description: 'Полная синхронизация прямо сейчас'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# Быстрая и полная синхронизации берут одну и ту же базу и публикуют её, поэтому не работают
+# одновременно: второй запуск просто ждёт, пока первый опубликуется, и ничего не теряется.
 concurrency:
-  group: update-site
+  group: site-publish
   cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -51,27 +50,13 @@ jobs:
             && echo "База скачана: $(du -h data/esports.db | cut -f1)" \
             || { rm -f data/esports.db; echo "Опубликованной базы ещё нет — начинаем с нуля"; }
 
-      - name: Забрать свежие данные с BO3.GG
-        timeout-minutes: 18
+      # Только текущие матчи: быстрый обход, который успевает опубликоваться за минуту
+      - name: Забрать свежие данные с BO3.GG (текущие матчи)
+        timeout-minutes: 10
         env:
-          FORCE_FULL: ${{ inputs.full || 'false' }}
-          FULL_EVERY_MIN: '60'
+          FORCE_FULL: 'false'
+          FULL_EVERY_MIN: '100000'   # никогда не переходить к полной синхронизации — для неё есть отдельный запуск
         run: node scripts/update-data.js
-
-      # Конфиги и прицелы: берём прошлые данные с опубликованного сайта,
-      # затем каждый парсер обновляет их сам, только если они устарели (конфиги — 6 ч, прицелы — 12 ч, полный обход — раз в неделю).
-      - name: Скачать текущие конфиги и прицелы
-        run: |
-          mkdir -p assets/js/data/cs2/configs
-          B="${{ steps.pages.outputs.base_url }}/assets/js/data/cs2"
-          for f in configs.json crosshairs.json status.json; do curl -fsSL "$B/$f?t=$(date +%s)" -o "assets/js/data/cs2/$f.new" && mv "assets/js/data/cs2/$f.new" "assets/js/data/cs2/$f" || rm -f "assets/js/data/cs2/$f.new"; done
-          node -e "const l=require('./assets/js/data/cs2/configs.json').items||[];console.log(l.map(c=>c.id).join('\n'))" 2>/dev/null | while read id; do
-            [ -f "assets/js/data/cs2/configs/$id.json" ] || curl -fsSL "$B/configs/$id.json" -o "assets/js/data/cs2/configs/$id.json" || true; done
-
-      - name: Обновить конфиги и прицелы CS2
-        timeout-minutes: 12
-        continue-on-error: true
-        run: node scripts/update-cs2-content.js
 
       # Трансляции не требуют ключей: сайт подключает официальный плеер Twitch напрямую по выбору пользователя.
 
