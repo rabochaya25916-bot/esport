@@ -17,7 +17,7 @@ permissions:
   id-token: write
 
 # Быстрая и полная синхронизации берут одну и ту же базу и публикуют её, поэтому не работают
-# одновременно: второй запуск просто ждёт, пока первый опубликуется, и ничего не теряется.
+# одновременно. Новые запуски не отменяют уже выполняющееся обновление.
 concurrency:
   group: site-publish
   cancel-in-progress: false
@@ -42,6 +42,13 @@ jobs:
       - id: pages
         uses: actions/configure-pages@v5
 
+      # Обе публикации восстанавливают один и тот же последний опубликованный набор.
+      # Ошибка загрузки останавливает публикацию, а не возвращает старые файлы из Git.
+      - name: Сохранить опубликованные конфиги, прицелы и картинки
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: python3 scripts/preserve-cs2.py restore --base-url "$SITE_URL"
+
       # Берём базу с уже опубликованного сайта — так сохраняются история матчей и составы
       - name: Скачать текущую базу
         run: |
@@ -60,12 +67,15 @@ jobs:
 
       # Трансляции не требуют ключей: сайт подключает официальный плеер Twitch напрямую по выбору пользователя.
 
+      - name: Сохранить набор CS2 для следующих обновлений
+        run: python3 scripts/preserve-cs2.py pack
+
       - name: Собрать файлы сайта
         run: |
           mkdir -p _site/data
           cp index.html favicon.svg _site/
           cp -r assets _site/
-          cp data/esports.db _site/data/
+          cp data/esports.db data/cs2-content.tar.gz _site/data/
           touch _site/.nojekyll
 
       # Отдельные HTML-страницы с метатегами для поисковиков + sitemap.xml, robots.txt, 404.html и проверка SEO
